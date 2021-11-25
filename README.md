@@ -1,3 +1,6 @@
 findrs 
 
-### uma CLI simples para obter informaçoes de arquivos, igual grep
+---
+
+### a simple CLI to get file information, like grep
+
