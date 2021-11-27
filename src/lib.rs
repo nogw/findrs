@@ -91,11 +91,22 @@ pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
   //   &mut Vec::<&std::path::PathBuf>::new()
   // );
 
+
+  fn printc(ln: usize, lr: &str, word: &str) -> String {
+    let splited_line: Vec<&str> = lr.split(&word).collect();
+    let formated = format!("{}{query}{rest}", termion::color::Fg(termion::color::Green), query = word, rest = termion::color::Fg(termion::color::White)); 
+    
+    return format!(
+      "{line:<2} | {result}", line = ln, result = splited_line.join(&formated)
+    );
+  }
+
   let contents = fs::read_to_string(&config.filename)?;
   let results = search(&config.query, &config.filename, &contents);
 
   for line in results.results {
-    println!("{} | {}", line.line_number, line.result);         
+    let text = printc(line.line_number, line.result, &config.query);
+    println!("{}", text)
   }
 
   Ok(())
