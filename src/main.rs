@@ -10,7 +10,7 @@ fn main() {
         process::exit(1);
     });
 
-    run(config);
+    run(config).unwrap();
     // if let Err(error) = run(config) {
     //     eprintln!("application error: {}", error);
     //     process::exit(1);

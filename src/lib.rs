@@ -2,7 +2,7 @@ use std::fs;
 use std::env;
 
 pub struct Config {
-  pub filename: String,
+  pub directory: String,
   pub query: String,
   pub case_sensitive: bool,
 }
@@ -13,12 +13,12 @@ impl Config {
       return Err("usage: findrs <filename: string> <query: string>")
     }
     
-    let filename = args[1].clone();
+    let directory = args[1].clone();
     let query = args[2].clone();
     
     let case_sensitive = env::var("CASE_INSENSITIVE").is_err();
     
-    Ok(Config { filename, query, case_sensitive })
+    Ok(Config { directory, query, case_sensitive })
   }
 }
 
@@ -32,15 +32,6 @@ pub struct LineResultSearch<'a> {
 pub struct SearchResult<'a> {
     pub file: &'a str,
     pub results: Vec<LineResultSearch<'a>>,
-}
-
-impl<'a> SearchResult<'a> {
-    pub fn _new(file: &'a str, results: Vec<LineResultSearch<'a>>) -> SearchResult<'a> {
-        SearchResult {
-            file,
-            results
-        }
-    }
 }
 
 pub fn search<'a>(query: &str, filename: &'a str, contents: &'a str) -> SearchResult<'a> {
@@ -61,62 +52,52 @@ pub fn search<'a>(query: &str, filename: &'a str, contents: &'a str) -> SearchRe
   result
 }
 
-// pub fn list_files<'a>(paths: fs::ReadDir, files: &mut Vec<&'a std::path::PathBuf>) -> Vec<&'a std::path::PathBuf> {
-//   for path in paths {    
+pub fn list_files(paths: fs::ReadDir, files: &mut Vec<std::path::PathBuf>) -> Vec<std::path::PathBuf> {
+  for path in paths {    
+    let p = path.unwrap().path();
+    let file_type = fs::metadata(&p).unwrap().file_type();
     
-//     let file_type = fs::metadata(
-//       path.unwrap().path()
-//     ).unwrap().file_type();
-    
-//     if file_type.is_dir() {
-//       list_files(
-//         fs::read_dir(
-//           path.unwrap().path()
-//         ).unwrap(),
-//         files
-//       );
-//     } else {
-//       files.push(
-//         path.unwrap().path()
-//       );
-//     }
-//   }
+    if file_type.is_dir() {
+      list_files(fs::read_dir(&p).unwrap(), files);
+    } else {
+      files.push(p);
+    }
+  }
   
-//   files.to_vec()
-// }
+  files.to_vec()
+}
+
+fn printc(ln: usize, lr: &str, word: &str) -> String {
+  let splited_line: Vec<&str> = lr.split(&word).collect();
+  let formated = format!(
+    "{}{}{query}{resetStl}{resetFb}", 
+    termion::color::Fg(termion::color::Green), 
+    termion::style::Underline, 
+    query = word, 
+    resetStl = termion::style::Reset,
+    resetFb = termion::color::Fg(termion::color::Reset),
+  ); 
+  
+  return format!(
+    "{line:<2} | {result}", line = ln, result = splited_line.join(&formated)
+  );
+}
 
 pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
-  // let list = list_files(
-  //   fs::read_dir(config.filename).unwrap(),
-  //   &mut Vec::<&std::path::PathBuf>::new()
-  // );
+  list_files(
+    fs::read_dir(&config.directory).unwrap(),
+    &mut Vec::<std::path::PathBuf>::new()
+  );
 
+  // let contents = fs::read_to_string(&config.directory)?;
+  // let results = search(&config.query, &config.directory, &contents);
 
-  fn printc(ln: usize, lr: &str, word: &str) -> String {
-    let splited_line: Vec<&str> = lr.split(&word).collect();
-    let formated = format!(
-      "{}{}{query}{resetStl}{resetFb}", 
-      termion::color::Fg(termion::color::Green), 
-      termion::style::Underline, 
-      query = word, 
-      resetStl = termion::style::Reset,
-      resetFb = termion::color::Fg(termion::color::Reset),
-    ); 
-    
-    return format!(
-      "{line:<2} | {result}", line = ln, result = splited_line.join(&formated)
-    );
-  }
-
-  let contents = fs::read_to_string(&config.filename)?;
-  let results = search(&config.query, &config.filename, &contents);
-
-  println!("\nFile: {}{}{}", termion::color::Fg(termion::color::Green), results.file, termion::color::Fg(termion::color::Reset));
-  println!("──────────────────────────────────────────────");
-  for line in results.results {
-    let text = printc(line.line_number, line.result, &config.query);
-    println!("{}", text)
-  }
+  // println!("\nFile: {}{}{}", termion::color::Fg(termion::color::Green), results.file, termion::color::Fg(termion::color::Reset));
+  // println!("──────────────────────────────────────────────");
+  // for line in results.results {
+  //   let text = printc(line.line_number, line.result, &config.query);
+  //   println!("{}", text)
+  // }
 
   Ok(())
 }
