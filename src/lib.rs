@@ -94,7 +94,14 @@ pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
 
   fn printc(ln: usize, lr: &str, word: &str) -> String {
     let splited_line: Vec<&str> = lr.split(&word).collect();
-    let formated = format!("{}{query}{rest}", termion::color::Fg(termion::color::Green), query = word, rest = termion::color::Fg(termion::color::White)); 
+    let formated = format!(
+      "{}{}{query}{resetStl}{resetFb}", 
+      termion::color::Fg(termion::color::Green), 
+      termion::style::Underline, 
+      query = word, 
+      resetStl = termion::style::Reset,
+      resetFb = termion::color::Fg(termion::color::Reset),
+    ); 
     
     return format!(
       "{line:<2} | {result}", line = ln, result = splited_line.join(&formated)
@@ -104,6 +111,8 @@ pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
   let contents = fs::read_to_string(&config.filename)?;
   let results = search(&config.query, &config.filename, &contents);
 
+  println!("\nFile: {}{}{}", termion::color::Fg(termion::color::Green), results.file, termion::color::Fg(termion::color::Reset));
+  println!("──────────────────────────────────────────────");
   for line in results.results {
     let text = printc(line.line_number, line.result, &config.query);
     println!("{}", text)
