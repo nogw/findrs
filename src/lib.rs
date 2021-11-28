@@ -68,7 +68,7 @@ pub fn list_files(paths: fs::ReadDir, files: &mut Vec<std::path::PathBuf>) -> Ve
 }
 
 fn printc(ln: usize, lr: &str, word: &str) -> String {
-  let splited_line: Vec<&str> = lr.split(&word).collect();
+  let splited_line: Vec<&str> = lr.trim().split(&word).collect();
   let formated = format!(
     "{}{}{query}{resetStl}{resetFb}", 
     termion::color::Fg(termion::color::Green), 
@@ -83,21 +83,36 @@ fn printc(ln: usize, lr: &str, word: &str) -> String {
   );
 }
 
+use ui;
+
 pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
-  list_files(
+  let files = list_files(
     fs::read_dir(&config.directory).unwrap(),
     &mut Vec::<std::path::PathBuf>::new()
   );
 
-  // let contents = fs::read_to_string(&config.directory)?;
-  // let results = search(&config.query, &config.directory, &contents);
+  for file in files {
+    let contents = fs::read_to_string(&file)?;
+    let results = search(&config.query, file.to_str().unwrap(), &contents);
 
-  // println!("\nFile: {}{}{}", termion::color::Fg(termion::color::Green), results.file, termion::color::Fg(termion::color::Reset));
-  // println!("──────────────────────────────────────────────");
-  // for line in results.results {
-  //   let text = printc(line.line_number, line.result, &config.query);
-  //   println!("{}", text)
-  // }
+    if results.results.len() > 0 {
+      println!(
+        "\nFile: {}{}{}", 
+        termion::color::Fg(termion::color::Green), 
+        results.file, 
+        termion::color::Fg(termion::color::Reset
+      ));
+      println!("──────────────────────────────────────────────");
+  
+      for line in results.results {
+        let text = printc(line.line_number, line.result, &config.query);
+        println!("{}", text)
+      }
+    }
+
+    println!();
+  }
+
 
   Ok(())
 }
