@@ -31,15 +31,18 @@ pub struct LineSearch<'a> {
 #[derive(Default)]
 pub struct Search<'a> {
     pub file: &'a str,
+    pub matches: usize,
     pub results: Vec<LineSearch<'a>>,
 }
 
 impl<'a> Search<'a> {
   pub fn get(query: &str, filename: &'a str, contents: &'a str) -> Search<'a> {
-    let mut result = Search { file: filename, results: Vec::<LineSearch<'a>>::new() };
+    let mut result = Search { file: filename, matches: 0, results: Vec::<LineSearch<'a>>::new() };
     
     for (index, line) in contents.lines().enumerate() {
       if line.contains(query) {
+        result.matches += line.matches(query).count();
+
         result.results.push(
             LineSearch {
                 line_number: index,
@@ -57,7 +60,8 @@ pub fn get_files(paths: fs::ReadDir, files: &mut Vec<std::path::PathBuf>) -> Vec
   for path in paths {    
     let p = path.unwrap().path();
     let file_type = fs::metadata(&p).unwrap().file_type();
-    
+    println!("{:?}", file_type);
+
     if file_type.is_dir() {
       get_files(fs::read_dir(&p).unwrap(), files);
     } else {
@@ -69,46 +73,19 @@ pub fn get_files(paths: fs::ReadDir, files: &mut Vec<std::path::PathBuf>) -> Vec
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
-  // let files = if let true = fs::metadata(&config.directory).unwrap().file_type().is_dir() {
-  //   get_files(
-  //     fs::read_dir(&config.directory).unwrap(),
-  //     &mut Vec::<std::path::PathBuf>::new()
-  //   )
-  // } else { 
-  //   std::path::PathBuf::from(&config.directory)
-  // };
+  let files = get_files(
+    fs::read_dir(std::path::PathBuf::from(&config.directory)).unwrap(),
+    &mut Vec::<std::path::PathBuf>::new(),
+  );
 
-  if fs::metadata(&config.directory).unwrap().file_type().is_dir() {
-    let files = get_files(
-      fs::read_dir(std::path::PathBuf::from(&config.directory)).unwrap(),
-      &mut Vec::<std::path::PathBuf>::new(),
-    );
-  
-    println!("{}", ui::format_header(&config.query, &config.directory));
-  
-    for file in files {
-      let contents = fs::read_to_string(&file)?;
-      let results = Search::get(&config.query, file.to_str().unwrap(), &contents);
-  
-      if results.results.len() > 0 {
-        println!("{}", ui::format_file_name(results.file));
-    
-        for line in results.results {
-          let text = ui::format_line_result(line.line_number, line.result, &config.query);
-          println!("{}", text)
-        }
-  
-        println!();
-      }
-    }
-  } else {
-    let contents = fs::read_to_string(&config.directory)?;
-    let results = Search::get(&config.query, &config.directory, &contents);
-  
-    println!("{}", ui::format_header(&config.query, &config.directory));
+  println!("{}", ui::format_header(&config.query, &config.directory));
+
+  for file in files {
+    let contents = fs::read_to_string(&file)?;
+    let results = Search::get(&config.query, file.to_str().unwrap(), &contents);
 
     if results.results.len() > 0 {
-      println!("{}", ui::format_file_name(results.file));
+      println!("{}", ui::format_file_name(results.file, results.matches));
   
       for line in results.results {
         let text = ui::format_line_result(line.line_number, line.result, &config.query);

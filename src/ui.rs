@@ -32,12 +32,15 @@ pub fn format_line_result(ln: usize, lr: &str, word: &str) -> String {
   );
 }
 
-pub fn format_file_name(filename: &str) -> String {
+pub fn format_file_name(filename: &str, matches: usize) -> String {
   return format!(
-      "{}File: {}{}{}\n", 
+      "{}File: {}{}{}\nMatches: {}{}{}\n",  
       "──────────────────────────────────────────────\n\n",
       termion::color::Fg(termion::color::Green), 
       filename, 
+      termion::color::Fg(termion::color::Reset),
+      termion::color::Fg(termion::color::Green), 
+      matches, 
       termion::color::Fg(termion::color::Reset),
   )
 }
