@@ -1,5 +1,4 @@
-use std::fs;
-use std::env;
+use std::{ fs, env, path };
 mod ui;
 
 pub struct Config {
@@ -23,46 +22,43 @@ impl Config {
   }
 }
 
-pub struct LineSearch<'a> {
+#[derive(Debug)]
+pub struct LineSearch {
     pub line_number: usize,
-    pub result: &'a str,
+    pub result: String,
 }
 
-#[derive(Default)]
+// Default, 
+#[derive(Debug)]
 pub struct Search<'a> {
     pub file: &'a str,
     pub matches: usize,
-    pub results: Vec<LineSearch<'a>>,
+    pub results: Vec<LineSearch>,
 }
 
 impl<'a> Search<'a> {
-  pub fn get(query: &str, filename: &'a str, contents: &'a str) -> Search<'a> {
-    let mut result = Search { file: filename, matches: 0, results: Vec::<LineSearch<'a>>::new() };
-    
-    for (index, line) in contents.lines().enumerate() {
-      if line.contains(query) {
-        result.matches += line.matches(query).count();
+  pub fn get(query: &'a str, filename: &'a str) -> Self {
+    let mut result = Search { file: filename, matches: 0, results: Vec::<LineSearch>::new() };
 
-        result.results.push(
-            LineSearch {
-                line_number: index,
-                result: line,
-            }
-        );
+    fs::read_to_string(filename).unwrap()
+      .lines()
+      .enumerate()
+      .filter(|(_, line)| line.contains(query))
+      .for_each(|(index, line)| { 
+        result.matches += line.matches(query).count(); 
+        result.results.push( LineSearch { line_number: index, result: String::from(line) } )
       }
-    }
-  
-    result
+    );
+
+  result
   }
 }
 
-pub fn get_files(paths: fs::ReadDir, files: &mut Vec<std::path::PathBuf>) -> Vec<std::path::PathBuf> {
+pub fn get_files(paths: fs::ReadDir, files: &mut Vec<path::PathBuf>) -> Vec<path::PathBuf> {
   for path in paths {    
     let p = path.unwrap().path();
-    let file_type = fs::metadata(&p).unwrap().file_type();
-    println!("{:?}", file_type);
 
-    if file_type.is_dir() {
+    if fs::metadata(&p).unwrap().file_type().is_dir() {
       get_files(fs::read_dir(&p).unwrap(), files);
     } else {
       files.push(p);
@@ -74,15 +70,13 @@ pub fn get_files(paths: fs::ReadDir, files: &mut Vec<std::path::PathBuf>) -> Vec
 
 pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
   let files = get_files(
-    fs::read_dir(std::path::PathBuf::from(&config.directory)).unwrap(),
-    &mut Vec::<std::path::PathBuf>::new(),
+    fs::read_dir(path::PathBuf::from(&config.directory)).unwrap(),
+    &mut Vec::<path::PathBuf>::new(),
   );
 
-  println!("{}", ui::format_header(&config.query, &config.directory));
-
   for file in files {
-    let contents = fs::read_to_string(&file)?;
-    let results = Search::get(&config.query, file.to_str().unwrap(), &contents);
+    // let contents = fs::read_to_string(&file)?;
+    let results = Search::get(&config.query, file.to_str().unwrap());
 
     if results.results.len() > 0 {
       println!("{}", ui::format_file_name(results.file, results.matches));
@@ -95,6 +89,10 @@ pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
       println!();
     }
   }
+
+  // files
+  //     .into_iter()
+  //     .map(|file| Search::get(&config.query, file.to_str().unwrap()))
 
   Ok(())
 }
