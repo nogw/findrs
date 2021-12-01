@@ -10,7 +10,7 @@ pub fn format_header(query: &str, directory: &str) -> String {
   }
 
   return format!(
-    "\nSearch: {}\nDirectory: {}",
+    "\nSearch: {}\nDirectory: {}\n",
     color(query),
     color(directory),
     // \nTotal of matches: {}
