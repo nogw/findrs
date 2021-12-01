@@ -19,7 +19,7 @@ pub fn format_header(query: &str, directory: &str) -> String {
   )
 }
 
-pub fn format_line_result(ln: usize, lr: String, word: &str) -> String {
+pub fn format_line_result(ln: usize, lr: &str, word: &str) -> String {
   let splited_line: Vec<&str> = lr.trim().split(&word).collect();
   let formated = format!(
     "{}{}{query}{resetStl}{resetFb}",
