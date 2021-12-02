@@ -48,7 +48,7 @@ pub struct Search {
 }
 
 impl Search {
-  pub fn find( query: &str, file: path::PathBuf ) -> Search {
+  pub fn find( query: &str, file: &path::PathBuf ) -> Search {
     let mut result = Search { file: file.clone(), ..Default::default() };
     let content = fs::read_to_string(file).unwrap();
 
@@ -85,17 +85,11 @@ pub fn get_files(paths: fs::ReadDir, files: &mut Vec<path::PathBuf>) -> Vec<path
 }
 
 pub fn extract_matches(files: Vec<path::PathBuf>, query: &str) -> Vec<Search> {
-  let mut search = Vec::<Search>::new();
-  
-  for file in files {
-    let results = Search::find(query, file);
-
-    if results.results.len() > 0 {
-      search.push(results)
-    }
-  }
-
-  search
+  files
+    .iter()
+    .map(|file| Search::find(query, file))
+    .filter(|result| result.results.len() > 0)
+    .collect()
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
@@ -119,9 +113,9 @@ pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
         println!()
       }
     }
-    
+
     FileType::File => {
-      let result = Search::find(&config.query, path::PathBuf::from(&config.directory));
+      let result = Search::find(&config.query, &path::PathBuf::from(&config.directory));
       
       println!("{}", ui::format_file_name(result.file, result.matches));
       
