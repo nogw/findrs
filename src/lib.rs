@@ -8,8 +8,8 @@ pub struct Config {
 }
 
 impl Config {
-  pub fn new(args: &[String]) -> Result<Self, &str> {
-    if args.len() < 3 { return Err("usage: findrs <filename or directory: string> <query: string> <extension to filter: OPTIONAL string>") }
+  pub fn new(args: &[String]) -> Result<Self, String> {
+    if args.len() < 3 { return Err(ui::format_error()) }
 
     let directory = args[1].clone();
     let query     = args[2].clone();
