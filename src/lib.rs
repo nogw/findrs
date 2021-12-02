@@ -41,15 +41,15 @@ pub struct LineSearch {
 }
 
 #[derive(Default)]
-pub struct Search<'a> {
-  pub file: &'a str,
+pub struct Search {
+  pub file: path::PathBuf,
   pub matches: usize,
   pub results: Vec<LineSearch>,
 }
 
-impl<'a> Search<'a> {
-  pub fn get(query: &'a str, file: &'a str ) -> Search<'a> {
-    let mut result = Search { file: file, ..Default::default() };
+impl Search {
+  pub fn find( query: &str, file: path::PathBuf ) -> Search {
+    let mut result = Search { file: file.clone(), ..Default::default() };
     let content = fs::read_to_string(file).unwrap();
 
     content
@@ -65,7 +65,7 @@ impl<'a> Search<'a> {
   }
 }
 
-pub fn get_number_matches(s: Vec<Search>) -> usize {
+pub fn get_number_matches(s: &Vec<Search>) -> usize {
   return s.into_iter().fold(0, |count, value| count + value.matches);
 }
 
@@ -84,31 +84,44 @@ pub fn get_files(paths: fs::ReadDir, files: &mut Vec<path::PathBuf>) -> Vec<path
   files.to_vec()
 }
 
+pub fn extract_matches(files: Vec<path::PathBuf>, query: &str) -> Vec<Search> {
+  let mut search = Vec::<Search>::new();
+  
+  for file in files {
+    let results = Search::find(query, file);
+
+    if results.results.len() > 0 {
+      search.push(results)
+    }
+  }
+
+  search
+}
+
 pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
   let filetype = FileType::from_path(&config.directory).unwrap();
   
   match filetype {
     FileType::Folder => {
       let files = get_files( fs::read_dir(path::PathBuf::from(&config.directory)).unwrap(), &mut Vec::<path::PathBuf>::new() );
-    
-      println!("{}", ui::format_header(&config.query, &config.directory));
-  
-      for file in files {
-        let results = Search::get(&config.query, file.to_str().unwrap());
-    
-        if results.results.len() > 0 {
-          println!("{}", ui::format_file_name(results.file, results.matches));
-      
-          for line in results.results {
-            println!("{}", ui::format_line_result(line.line_number, &line.result, &config.query))
-          }
-    
-          println!();
+      let results = extract_matches(files, &config.query);
+      let matches = get_number_matches(&results);
+
+      println!("{}", ui::format_header(&config.query, &config.directory, matches));
+
+      for result in results {
+        println!("{}", ui::format_file_name(result.file, result.matches));
+
+        for line in result.results {
+          println!("{}", ui::format_line_result(line.line_number, &line.result, &config.query))
         }
+
+        println!()
       }
     }
+    
     FileType::File => {
-      let result = Search::get(&config.query, &config.directory);
+      let result = Search::find(&config.query, path::PathBuf::from(&config.directory));
       
       println!("{}", ui::format_file_name(result.file, result.matches));
       
