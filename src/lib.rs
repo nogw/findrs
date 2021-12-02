@@ -1,14 +1,13 @@
-use std::{ fs, env, path };
+use std::{ fs, path };
 mod ui;
 
 pub struct Config {
   pub directory: String,
   pub query: String,
-  pub case_sensitive: bool,
 }
 
 impl Config {
-  pub fn new(args: &[String]) -> Result<Config, &str> {
+  pub fn new(args: &[String]) -> Result<Self, &str> {
     if args.len() < 3 {
       return Err("usage: findrs <filename: string> <query: string>")
     }
@@ -16,9 +15,7 @@ impl Config {
     let directory = args[1].clone();
     let query = args[2].clone();
 
-    let case_sensitive = env::var("CASE_INSENSITIVE").is_err();
-
-    Ok(Config { directory, query, case_sensitive })
+    Ok(Config { directory, query })
   }
 }
 
@@ -30,7 +27,7 @@ pub enum FileType {
 }
 
 impl FileType {
-  fn from_path(p: &str) -> std::io::Result<FileType> {
+  fn from_path(p: &str) -> std::io::Result<Self> {
     let filetype = fs::metadata(p)?.file_type();
     if filetype.is_dir()  { return Ok(FileType::Folder) }
     if filetype.is_file() { return Ok(FileType::File) }
@@ -68,6 +65,10 @@ impl<'a> Search<'a> {
   }
 }
 
+pub fn get_number_matches(s: Vec<Search>) -> usize {
+  return s.into_iter().fold(0, |count, value| count + value.matches);
+}
+
 pub fn get_files(paths: fs::ReadDir, files: &mut Vec<path::PathBuf>) -> Vec<path::PathBuf> {
   for path in paths {    
     let p = path.unwrap().path();
@@ -75,10 +76,9 @@ pub fn get_files(paths: fs::ReadDir, files: &mut Vec<path::PathBuf>) -> Vec<path
 
     if filetype == FileType::Folder {
       get_files(fs::read_dir(&p).unwrap(), files);
-    } else 
-    if filetype == FileType::File {
-      files.push(p)
     }
+
+    files.push(p)
   }
   
   files.to_vec()
