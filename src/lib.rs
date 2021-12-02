@@ -4,18 +4,18 @@ mod ui;
 pub struct Config {
   pub directory: String,
   pub query: String,
+  pub filter: Option<String>
 }
 
 impl Config {
   pub fn new(args: &[String]) -> Result<Self, &str> {
-    if args.len() < 3 {
-      return Err("usage: findrs <filename: string> <query: string>")
-    }
+    if args.len() < 3 { return Err("usage: findrs <filename or directory: string> <query: string> <extension to filter: OPTIONAL string>") }
 
     let directory = args[1].clone();
-    let query = args[2].clone();
+    let query     = args[2].clone();
+    let filter    = if args.get(3) != None { Some(args[3].clone()) } else { None };
 
-    Ok(Config { directory, query })
+    Ok(Config { directory, query, filter })
   }
 }
 
@@ -23,7 +23,7 @@ impl Config {
 pub enum FileType {
   Folder,
   File,
-  Symlink
+  Unknown
 }
 
 impl FileType {
@@ -31,7 +31,7 @@ impl FileType {
     let filetype = fs::metadata(p)?.file_type();
     if filetype.is_dir()  { return Ok(FileType::Folder) }
     if filetype.is_file() { return Ok(FileType::File) }
-    Ok(FileType::Symlink) 
+    Ok(FileType::Unknown)
   }
 }
 
@@ -50,9 +50,9 @@ pub struct Search {
 impl Search {
   pub fn find( query: &str, file: &path::PathBuf ) -> Search {
     let mut result = Search { file: file.clone(), ..Default::default() };
-    let content = fs::read_to_string(file).unwrap();
 
-    content
+    fs::read_to_string(file)
+      .unwrap()
       .lines()
       .enumerate()
       .filter(|(_, l)| l.contains(query))
@@ -69,16 +69,26 @@ pub fn get_number_matches(s: &Vec<Search>) -> usize {
   return s.into_iter().fold(0, |count, value| count + value.matches);
 }
 
-pub fn get_files(paths: fs::ReadDir, files: &mut Vec<path::PathBuf>) -> Vec<path::PathBuf> {
+pub fn get_files(paths: fs::ReadDir, files: &mut Vec<path::PathBuf>, filter: &Option<String>) -> Vec<path::PathBuf> {
   for path in paths {    
     let p = path.unwrap().path();
     let filetype = FileType::from_path(p.to_str().unwrap()).unwrap();
 
-    if filetype == FileType::Folder {
-      get_files(fs::read_dir(&p).unwrap(), files);
+    match filetype {
+      FileType::Folder => {
+        get_files(fs::read_dir(&p).unwrap(), files, filter);
+      },
+      FileType::File => {
+        if let Some(filter_extensions) = filter {
+          if filter_extensions == p.extension().unwrap().to_str().unwrap() {
+            files.push(p)
+          }
+        } else { 
+          files.push(p) 
+        }
+      }
+      _ => ()
     }
-
-    files.push(p)
   }
   
   files.to_vec()
@@ -97,7 +107,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
   
   match filetype {
     FileType::Folder => {
-      let files = get_files( fs::read_dir(path::PathBuf::from(&config.directory)).unwrap(), &mut Vec::<path::PathBuf>::new() );
+      let files = get_files( fs::read_dir(path::PathBuf::from(&config.directory)).unwrap(), &mut Vec::<path::PathBuf>::new(), &config.filter);
       let results = extract_matches(files, &config.query);
       let matches = get_number_matches(&results);
 

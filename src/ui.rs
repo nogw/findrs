@@ -10,25 +10,20 @@ pub fn format_header(query: &str, directory: &str, matches: usize) -> String {
   }
 
   return format!(
-    "\nSearch: {}\nDirectory: {}\nTotal of matches: {}",
+    "\nSearch: {}\nDirectory: {}\nTotal of matches: {}\n",
     color(query),
     color(directory),
     color(&matches.to_string()),
-    // \nTotal of matches: {}
-    // , matches: usize
-    // color(matches),
   )
 }
 
 pub fn format_line_result(ln: usize, lr: &str, word: &str) -> String {
   let splited_line: Vec<&str> = lr.trim().split(&word).collect();
   let formated = format!(
-    "{}{}{query}{resetStl}{resetFb}",
-    termion::color::Fg(termion::color::Green),
-    termion::style::Underline,
-    query = word,
-    resetStl = termion::style::Reset,
-    resetFb = termion::color::Fg(termion::color::Reset),
+    "{}{}{}{}{}",
+    termion::color::Fg(termion::color::Green), termion::style::Underline,
+    word,
+    termion::style::Reset, termion::color::Fg(termion::color::Reset),
   );
 
   return format!(
