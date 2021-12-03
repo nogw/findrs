@@ -8,6 +8,7 @@ findrs
 Search: use
 Directory: src
 Total of matches: 4
+
 ──────────────────────────────────────────────
 
 File: src/lib.rs
@@ -25,6 +26,8 @@ Matches: 3
 2  | use findrs::{ Config, run };
 ```
 
+---
+
 ### Installation: 
 
 ```
@@ -33,6 +36,8 @@ cd findrs
 cargo install --locked --path .
 findrs
 ```
+
+---
 
 ### Usage:
 
