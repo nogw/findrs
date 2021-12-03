@@ -134,7 +134,9 @@ pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
         &mut Vec::<path::PathBuf>::new(),
         &config.filter,
       );
+
       let results = extract_matches(files, &config.query);
+
       let matches = get_number_matches(&results);
 
       println!(
@@ -158,7 +160,9 @@ pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
 
     FileType::File => {
       let result = Search::find(&config.query, &path::PathBuf::from(&config.directory));
+
       println!("{}", ui::format_file_name(result.file, result.matches));
+
       if result.results.len() > 0 {
         for line in result.results {
           println!(
@@ -166,9 +170,11 @@ pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
             ui::format_line_result(line.line_number, &line.result, &config.query)
           )
         }
+
         println!();
       }
     }
+
     _ => (),
   }
 

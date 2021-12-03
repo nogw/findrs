@@ -2,7 +2,7 @@ findrs
 
 ---
 
-### a simple CLI to get file information, like grep
+### A simple CLI to get file information, like grep
 
 ```
 Search: use
@@ -25,8 +25,19 @@ Matches: 3
 2  | use findrs::{ Config, run };
 ```
 
+### Installation: 
+
 ```
-usage: findrs <directory> <query> <filter>
+git clone https://github.com/nogw/findrs
+cd findrs
+cargo install --locked --path .
+findrs
+```
+
+### Usage:
+
+```
+findrs <directory> <query> <filter>
 
 directory: file or folder to search
 query: word to search, if it is a sentence use " " e.g "a b c"
