@@ -1,13 +1,28 @@
-fn print_green(text: &str) -> String {
-  format!("{}{}{}{}{}", 
-    termion::color::Fg(termion::color::Green), termion::style::Underline,
+fn print_red(text: &str) -> String {
+  format!(
+    "{}{}{}{}{}",
+    termion::color::Fg(termion::color::Red),
+    termion::style::Underline,
     text,
-    termion::style::Reset, termion::color::Fg(termion::color::Reset),
+    termion::style::Reset,
+    termion::color::Fg(termion::color::Reset),
+  )
+}
+
+fn print_green(text: &str) -> String {
+  format!(
+    "{}{}{}{}{}",
+    termion::color::Fg(termion::color::Green),
+    termion::style::Underline,
+    text,
+    termion::style::Reset,
+    termion::color::Fg(termion::color::Reset),
   )
 }
 
 fn print_underline_purple(text: &str) -> String {
-  format!("{}{}{}{}{}",
+  format!(
+    "{}{}{}{}{}",
     termion::color::Fg(termion::color::Magenta),
     termion::style::Underline,
     text,
@@ -36,20 +51,23 @@ pub fn format_header(query: &str, directory: &str, matches: usize) -> String {
     print_underline_purple(query),
     print_underline_purple(directory),
     print_underline_purple(&matches.to_string()),
-    if matches == 0 { 
-      print_underline_purple("\nNo file has a match ;(\n") 
-    } else { 
-      print_underline_purple("") 
+    if matches == 0 {
+      print_underline_purple("\nNo file has a match ;(\n")
+    } else {
+      print_underline_purple("")
     }
   )
 }
 
 pub fn format_line_result(ln: usize, lr: &str, word: &str) -> String {
   let splited_line: Vec<&str> = lr.trim().split(&word).collect();
-  let formated = format!("{}", print_green(word));
+  let formated = format!("{}", print_red(word));
 
   format!(
-    "{line:<2} | {result}", line = ln, result = splited_line.join(&formated)
+    "{line:<2} {bar} {result}",
+    line = &ln.to_string(),
+    bar = "|",
+    result = splited_line.join(&formated)
   )
 }
 

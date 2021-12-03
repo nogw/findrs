@@ -1,6 +1,6 @@
+use findrs::{run, Config};
 use std::env;
 use std::process;
-use findrs::{ Config, run };
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -11,8 +11,4 @@ fn main() {
     });
 
     run(config).unwrap();
-    // if let Err(error) = run(config) {
-    //     eprintln!("application error: {}", error);
-    //     process::exit(1);
-    // }
 }
