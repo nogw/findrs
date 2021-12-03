@@ -24,3 +24,11 @@ Matches: 3
 1  | use std::process;
 2  | use findrs::{ Config, run };
 ```
+
+```
+usage: findrs <directory> <query> <filter>
+
+directory: file or folder to search
+query: word to search, if it is a sentence use " " e.g "a b c"
+filter: file extension to filter
+```
