@@ -3,27 +3,15 @@ mod ui;
 
 pub struct Config {
   pub directory: String,
-  pub query: String,
+  pub search: String,
   pub filter: Option<String>,
 }
 
 impl Config {
-  pub fn new(args: &[String]) -> Result<Self, String> {
-    if args.len() < 3 {
-      return Err(ui::format_error());
-    }
-
-    let directory = args[1].clone();
-    let query = args[2].clone();
-    let filter = if args.get(3) != None {
-      Some(args[3].clone())
-    } else {
-      None
-    };
-
+  pub fn new(directory: String, search: String, filter: Option<String>) -> Result<Self, String> {
     Ok(Config {
       directory,
-      query,
+      search,
       filter,
     })
   }
@@ -62,19 +50,27 @@ pub struct Search {
 }
 
 impl Search {
-  pub fn find(query: &str, file: &path::PathBuf) -> Search {
+  pub fn find(search: &str, file: &path::PathBuf) -> Search {
     let mut result = Search {
       file: file.clone(),
       ..Default::default()
     };
 
-    fs::read_to_string(file)
-      .unwrap()
+    use std::io;
+    use std::io::prelude::*;
+
+    let mut content = fs::File::open(file).unwrap();
+    let mut buf = vec![];
+    content.read_to_end(&mut buf);
+    let contents = String::from_utf8_lossy(&buf);
+
+    // fs::read_to_end(file)
+    contents
       .lines()
       .enumerate()
-      .filter(|(_, l)| l.contains(query))
+      .filter(|(_, l)| l.contains(search))
       .for_each(|(i, l)| {
-        result.matches += l.matches(query).count();
+        result.matches += l.matches(search).count();
         result.results.push(LineSearch {
           line_number: i,
           result: l.to_owned(),
@@ -117,10 +113,10 @@ pub fn get_files(
   }
 }
 
-pub fn extract_matches(files: Vec<path::PathBuf>, query: &str) -> Vec<Search> {
+pub fn extract_matches(files: Vec<path::PathBuf>, search: &str) -> Vec<Search> {
   files
     .iter()
-    .map(|file| Search::find(query, file))
+    .map(|file| Search::find(search, file))
     .filter(|result| result.results.len() > 0)
     .collect()
 }
@@ -134,14 +130,12 @@ pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
         &mut Vec::<path::PathBuf>::new(),
         &config.filter,
       );
-
-      let results = extract_matches(files, &config.query);
-
+      let results = extract_matches(files, &config.search);
       let matches = get_number_matches(&results);
 
       println!(
         "{}",
-        ui::format_header(&config.query, &config.directory, matches)
+        ui::format_header(&config.search, &config.directory, matches)
       );
 
       for result in results {
@@ -150,7 +144,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
         for line in result.results {
           println!(
             "{}",
-            ui::format_line_result(line.line_number, &line.result, &config.query)
+            ui::format_line_result(line.line_number, &line.result, &config.search)
           )
         }
 
@@ -159,7 +153,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     FileType::File => {
-      let result = Search::find(&config.query, &path::PathBuf::from(&config.directory));
+      let result = Search::find(&config.search, &path::PathBuf::from(&config.directory));
 
       println!("{}", ui::format_file_name(result.file, result.matches));
 
@@ -167,7 +161,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
         for line in result.results {
           println!(
             "{}",
-            ui::format_line_result(line.line_number, &line.result, &config.query)
+            ui::format_line_result(line.line_number, &line.result, &config.search)
           )
         }
 
