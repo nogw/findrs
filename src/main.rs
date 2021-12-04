@@ -1,7 +1,6 @@
 use clap::{App, Arg};
 
 use findrs::{run, Config};
-use std::env;
 use std::process;
 
 fn main() {

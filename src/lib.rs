@@ -1,3 +1,4 @@
+use std::io::prelude::*;
 use std::{fs, path};
 mod ui;
 
@@ -56,15 +57,11 @@ impl Search {
       ..Default::default()
     };
 
-    use std::io;
-    use std::io::prelude::*;
-
     let mut content = fs::File::open(file).unwrap();
     let mut buf = vec![];
-    content.read_to_end(&mut buf);
+    content.read_to_end(&mut buf).unwrap();
     let contents = String::from_utf8_lossy(&buf);
 
-    // fs::read_to_end(file)
     contents
       .lines()
       .enumerate()
@@ -136,19 +133,13 @@ pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
       let results = extract_matches(files, &config.search);
       let matches = get_number_matches(&results);
 
-      println!(
-        "{}",
-        ui::format_header(&config.search, &config.directory, matches)
-      );
+      ui::format_header(&config.search, &config.directory, matches);
 
       for result in results {
-        println!("{}", ui::format_file_name(result.file, result.matches));
+        ui::format_file_name(result.file, result.matches);
 
         for line in result.results {
-          println!(
-            "{}",
-            ui::format_line_result(line.line_number, &line.result, &config.search)
-          )
+          ui::format_line_result(line.line_number, &line.result, &config.search);
         }
 
         println!()
@@ -158,18 +149,13 @@ pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     FileType::File => {
       let result = Search::find(&config.search, &path::PathBuf::from(&config.directory));
 
-      println!("{}", ui::format_file_name(result.file, result.matches));
+      ui::format_file_name(result.file, result.matches);
 
-      if result.results.len() > 0 {
-        for line in result.results {
-          println!(
-            "{}",
-            ui::format_line_result(line.line_number, &line.result, &config.search)
-          )
-        }
-
-        println!();
+      for line in result.results {
+        ui::format_line_result(line.line_number, &line.result, &config.search);
       }
+
+      println!();
     }
 
     _ => (),
