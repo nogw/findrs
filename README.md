@@ -52,5 +52,7 @@ findrs <directory> <query> <filter>
 
 directory: file or folder to search
 query: word to search, if it is a sentence use " " i.e. "a b c"
-filter: file extension to filter
+filter: file extension to filter, i.e. 
+  -f rs
+  -f rs,ml,txt,md
 ```

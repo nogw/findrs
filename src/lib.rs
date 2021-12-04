@@ -104,11 +104,14 @@ pub fn get_files(
   }
 
   match filter {
-    Some(f) => files
-      .to_owned()
-      .into_iter()
-      .filter(|file| file.extension().unwrap().to_str().unwrap() == f)
-      .collect::<Vec<path::PathBuf>>(),
+    Some(f) => {
+      let filters: Vec<&str> = f.split(",").collect();
+      files
+        .to_owned()
+        .into_iter()
+        .filter(|file| filters.contains(&file.extension().unwrap().to_str().unwrap()))
+        .collect::<Vec<path::PathBuf>>()
+    }
     None => files.to_vec(),
   }
 }
